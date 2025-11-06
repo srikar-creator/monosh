@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FEDF-PS14 — Placement Interaction System (Demo)</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#60a5fa;--success:#34d399}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:linear-gradient(180deg,#071028 0%,#071726 60%);color:#e6eef8}
+    .wrap{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    header h1{margin:0;font-size:20px}
+    nav{display:flex;gap:8px;margin-top:12px}
+    button.btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer}
+    button.btn.active{border-color:var(--accent);color:var(--accent);box-shadow:0 6px 18px rgba(96,165,250,0.06)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-top:20px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .jobs-list .job{padding:12px;border-radius:10px;margin-bottom:10px;border:1px dashed rgba(255,255,255,0.03)}
+    .job h3{margin:0 0 6px 0;font-size:16px}
+    .meta{font-size:13px;color:var(--muted)}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    label{font-size:13px;color:var(--muted);display:block;margin:8px 0 6px}
+    .small{font-size:13px;color:var(--muted)}
+    .right-col{position:relative}
+    .user-card{display:flex;align-items:center;gap:10px}
+    .avatar{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#1e293b,#0f1724);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted)}
+    .table{width:100%;border-collapse:collapse;margin-top:8px}
+    .table th,.table td{padding:8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.02);font-size:13px}
+    .status{padding:6px 8px;border-radius:999px;font-weight:600;font-size:12px}
+    .status.pending{background:rgba(255,179,0,0.12);color:#ffb347}
+    .status.accepted{background:rgba(52,211,153,0.12);color:var(--success)}
+    .status.rejected{background:rgba(239,68,68,0.08);color:#f87171}
+    footer{margin-top:20px;color:var(--muted);font-size:13px}
+    .textarea-small{height:72px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .hidden{display:none}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.03);font-size:13px}
+    .flex{display:flex;align-items:center;gap:8px}
+    .search{display:flex;gap:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div style="width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#111827,#0b1220);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent)">PS</div>
+      <div>
+        <h1>FEDF-PS14 — Placement Interaction System (Demo)</h1>
+        <div class="small">A single-file demo using localStorage to simulate posting, applying, and tracking placements.</div>
+      </div>
+    </header>
+
+    <nav>
+      <button class="btn active" data-role="student">Student</button>
+      <button class="btn" data-role="employer">Employer</button>
+      <button class="btn" data-role="placement-officer">Placement Officer</button>
+      <button class="btn" data-role="admin">Admin</button>
+      <div style="flex:1"></div>
+      <div class="search">
+        <input id="globalSearch" placeholder="Search jobs, companies, skills..." />
+        <button class="btn" id="resetDemo">Reset Demo</button>
+      </div>
+    </nav>
+
+    <div class="grid">
+      <main class="card">
+        <div id="roleContent">
+          <!-- role-specific content injected here -->
+        </div>
+      </main>
+
+      <aside class="card right-col">
+        <div class="user-card">
+          <div class="avatar" id="currentUserAvatar">S</div>
+          <div>
+            <div id="currentUserName">Guest Student</div>
+            <div class="small" id="currentUserRole">Student</div>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0" />
+
+        <div>
+          <div class="small">Quick Stats</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <div class="pill" id="statJobs">Jobs: 0</div>
+            <div class="pill" id="statApplications">Applications: 0</div>
+            <div class="pill" id="statPlaced">Placed: 0</div>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0" />
+
+        <div>
+          <div class="small">Sample Actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button class="btn" id="createSampleData">Populate Sample Data</button>
+            <button class="btn" id="exportData">Export JSON</button>
+            <button class="btn" id="importDataBtn">Import JSON</button>
+            <input type="file" id="importFile" accept="application/json" class="hidden" />
+          </div>
+        </div>
+
+      </aside>
+    </div>
+
+    <footer>
+      This is a frontend-only demo. For production you'd replace localStorage with a backend (REST/GraphQL) plus authentication.
+    </footer>
+  </div>
+
+<script>
+// ---------- Data model & persistence (localStorage) ----------
+const LS_KEY = 'fedf_ps14_v1';
+const defaultState = {
+  users: [
+    {id:'u-student-1',name:'Alice Student',role:'student'},
+    {id:'u-employer-1',name:'Acme Corp',role:'employer'},
+    {id:'u-officer-1',name:'Mr. Placement',role:'placement-officer'},
+    {id:'u-admin-1',name:'System Admin',role:'admin'}
+  ],
+  currentUserId: 'u-student-1',
+  jobs: [
+    {id:'job-1',title:'Frontend Intern',companyId:'u-employer-1',location:'Remote',skills:['HTML','CSS','JS'],postedAt:Date.now()-1000*60*60*24*10,description:'3-month internship. Build UI components.',positions:2},
+  ],
+  applications: [
+    // {id:'app-1',jobId:'job-1',studentId:'u-student-1',status:'pending',appliedAt:Date.now()}
+  ]
+};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return structuredClone(defaultState);
+    return JSON.parse(raw);
+  }catch(e){console.error(e);return structuredClone(defaultState)}
+}
+function saveState(s){localStorage.setItem(LS_KEY,JSON.stringify(s))}
+let state = loadState();
+
+// ---------- Helpers ----------
+function uid(prefix='id'){return prefix+'-'+Math.random().toString(36).slice(2,9)}
+function byId(arr,id){return arr.find(x=>x.id===id)}
+function currentUser(){return byId(state.users,state.currentUserId)||state.users[0]}
+
+// ---------- UI: role tabs ----------
+const roleButtons = document.querySelectorAll('button[data-role]');
+roleButtons.forEach(btn=>btn.addEventListener('click',()=>{
+  roleButtons.forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const role = btn.dataset.role;
+  renderRole(role);
+}))
+
+// ---------- Renderers for roles ----------
+function renderRole(role){
+  const container = document.getElementById('roleContent');
+  // set current user by role if available (demo convenience)
+  const u = state.users.find(x=>x.role===role) || state.users[0];
+  state.currentUserId = u.id;
+  saveState(state);
+  refreshRightCol();
+
+  if(role==='student') renderStudent(container);
+  else if(role==='employer') renderEmployer(container);
+  else if(role==='placement-officer') renderOfficer(container);
+  else if(role==='admin') renderAdmin(container);
+}
+
+// ---------- Search filtering ----------
+const searchInput = document.getElementById('globalSearch');
+searchInput.addEventListener('input',()=>{const role = document.querySelector('button.active').dataset.role; renderRole(role)})
+
+// ---------- Student View ----------
+function renderStudent(container){
+  const html = document.createElement('div');
+  html.innerHTML = `
+    <h2>Student Dashboard</h2>
+    <div class="small">Explore available jobs and track your applications.</div>
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0" />
+    <div class="jobs-list" id="jobsList"></div>
+    <h3 style="margin-top:14px">Your Applications</h3>
+    <div id="myApplications"></div>
+  `;
+  container.innerHTML='';
+  container.appendChild(html);
+
+  renderJobList(true);
+  renderMyApplications();
+}
+
+function renderJobList(forStudent=false){
+  const listEl = document.getElementById('jobsList');
+  listEl.innerHTML='';
+  const q = searchInput.value.trim().toLowerCase();
+  const jobs = state.jobs.filter(job=>{
+    if(!q) return true;
+    return job.title.toLowerCase().includes(q)||job.location?.toLowerCase().includes(q)||(job.skills||[]).join(' ').toLowerCase().includes(q)||companyName(job.companyId).toLowerCase().includes(q);
+  }).sort((a,b)=>b.postedAt-a.postedAt);
+  if(jobs.length===0){listEl.innerHTML='<div class="small">No jobs found.</div>';return}
+  jobs.forEach(job=>{
+    const el = document.createElement('div'); el.className='job';
+    el.innerHTML = `<h3>${job.title}</h3><div class="meta">${companyName(job.companyId)} • ${job.location||'—'} • Posted ${timeAgo(job.postedAt)}</div>
+      <div class="small" style="margin-top:8px">${job.description || ''}</div>
+    `;
+    const actions = document.createElement('div'); actions.className='actions';
+    const applyBtn = document.createElement('button'); applyBtn.className='btn'; applyBtn.textContent='Apply';
+    applyBtn.addEventListener('click',()=>openApplyModal(job.id));
+    actions.appendChild(applyBtn);
+
+    const detailsBtn = document.createElement('button'); detailsBtn.className='btn'; detailsBtn.textContent='Details';
+    detailsBtn.addEventListener('click',()=>alert(JSON.stringify(job, null, 2)));
+    actions.appendChild(detailsBtn);
+
+    el.appendChild(actions);
+    listEl.appendChild(el);
+  })
+}
+
+function renderMyApplications(){
+  const container = document.getElementById('myApplications');
+  const me = currentUser();
+  const apps = state.applications.filter(a=>a.studentId===me.id).sort((a,b)=>b.appliedAt-a.appliedAt);
+  if(apps.length===0){container.innerHTML='<div class="small">You have not applied to any jobs yet.</div>';return}
+  let html = '<table class="table"><thead><tr><th>Job</th><th>Company</th><th>Applied</th><th>Status</th></tr></thead><tbody>';
+  apps.forEach(app=>{
+    const job = byId(state.jobs,app.jobId)||{title:'[removed]'};
+    html += <tr><td>${job.title}</td><td>${companyName(job.companyId)}</td><td>${new Date(app.appliedAt).toLocaleString()}</td><td><span class="status ${app.status}">${app.status}</span></td></tr>;
+  })
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function openApplyModal(jobId){
+  const me = currentUser();
+  if(me.role!=='student'){alert('Switch to a student role to apply.');return}
+  const job = byId(state.jobs,jobId);
+  if(!job){alert('Job not found');return}
+  const already = state.applications.find(a=>a.jobId===jobId && a.studentId===me.id);
+  if(already){alert('You already applied to this job.');return}
+  const cover = prompt(Applying to ${job.title} at ${companyName(job.companyId)}.\nWrite a short cover message:, 'Hello — I am interested in this role.');
+  if(cover===null) return;
+  const app = {id:uid('app'),jobId,studentId:me.id,status:'pending',appliedAt:Date.now(),cover};
+  state.applications.push(app); saveState(state); renderMyApplications(); refreshRightCol(); alert('Application submitted');
+}
+
+// ---------- Employer View ----------
+function renderEmployer(container){
+  const html = document.createElement('div');
+  html.innerHTML = `
+    <h2>Employer Dashboard</h2>
+    <div class="small">Post jobs and review applications.</div>
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0" />
+    <div style="display:flex;gap:14px">
+      <div style="flex:1">
+        <h3>Post a Job</h3>
+        <div id="postJobForm"></div>
+      </div>
+      <div style="width:320px">
+        <h3>Your Jobs</h3>
+        <div id="employerJobs"></div>
+      </div>
+    </div>
+  `;
+  container.innerHTML='';
+  container.appendChild(html);
+  renderPostJobForm(); renderEmployerJobs();
+}
+
+function renderPostJobForm(){
+  const el = document.getElementById('postJobForm');
+  el.innerHTML = `
+    <label>Title<input id="jobTitle" /></label>
+    <label>Location<input id="jobLocation" /></label>
+    <label>Skills (comma separated)<input id="jobSkills" /></label>
+    <label>Description<textarea id="jobDesc" class="textarea-small"></textarea></label>
+    <label>Positions<input id="jobPositions" type="number" value="1" /></label>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="postJobBtn">Post Job</button></div>
+  `;
+  document.getElementById('postJobBtn').addEventListener('click',()=>{
+    const title = document.getElementById('jobTitle').value.trim();
+    if(!title) return alert('Provide a title');
+    const job = {
+      id:uid('job'),
+      title,
+      companyId:state.currentUserId,
+      location:document.getElementById('jobLocation').value.trim(),
+      skills:document.getElementById('jobSkills').value.split(',').map(s=>s.trim()).filter(Boolean),
+      description:document.getElementById('jobDesc').value.trim(),
+      positions:parseInt(document.getElementById('jobPositions').value)||1,
+      postedAt:Date.now()
+    };
+    state.jobs.push(job); saveState(state); renderEmployerJobs(); renderJobList(); refreshRightCol(); alert('Job posted');
+  })
+}
+
+function renderEmployerJobs(){
+  const el = document.getElementById('employerJobs');
+  const me = currentUser();
+  const jobs = state.jobs.filter(j=>j.companyId===me.id).sort((a,b)=>b.postedAt-a.postedAt);
+  if(jobs.length===0){el.innerHTML='<div class="small">No jobs posted yet.</div>';return}
+  el.innerHTML='';
+  jobs.forEach(job=>{
+    const div = document.createElement('div'); div.className='job';
+    div.innerHTML = <h3>${job.title}</h3><div class="meta">Posted ${timeAgo(job.postedAt)}</div>;
+    const btns = document.createElement('div'); btns.className='actions';
+    const viewApps = document.createElement('button'); viewApps.className='btn'; viewApps.textContent='View Applications';
+    viewApps.addEventListener('click',()=>renderApplicationsForJob(job.id));
+    btns.appendChild(viewApps);
+    const edit = document.createElement('button'); edit.className='btn'; edit.textContent='Edit'; edit.addEventListener('click',()=>editJob(job.id));
+    btns.appendChild(edit);
+    const del = document.createElement('button'); del.className='btn'; del.textContent='Delete'; del.addEventListener('click',()=>{if(confirm('Delete job?')){state.jobs=state.jobs.filter(j=>j.id!==job.id);state.applications=state.applications.filter(a=>a.jobId!==job.id);saveState(state);renderEmployerJobs();renderJobList();refreshRightCol()}});
+    btns.appendChild(del);
+    div.appendChild(btns);
+    el.appendChild(div);
+  })
+}
+
+function renderApplicationsForJob(jobId){
+  const job = byId(state.jobs,jobId);
+  const apps = state.applications.filter(a=>a.jobId===jobId).sort((a,b)=>b.appliedAt-a.appliedAt);
+  let html = <h3>Applications — ${job.title}</h3>;
+  if(apps.length===0) html += '<div class="small">No applications yet.</div>';
+  else{
+    html += '<table class="table"><thead><tr><th>Student</th><th>Applied</th><th>Cover</th><th>Status</th><th>Actions</th></tr></thead><tbody>'
+    apps.forEach(a=>{
+      const student = byId(state.users,a.studentId)||{name:'[deleted]'};
+      html += <tr><td>${student.name}</td><td>${new Date(a.appliedAt).toLocaleString()}</td><td>${escapeHtml(a.cover||'')}</td><td><span class="status ${a.status}">${a.status}</span></td><td>;
+      html += <button class="btn" onclick="changeAppStatus('${a.id}','accepted')">Accept</button> <button class="btn" onclick="changeAppStatus('${a.id}','rejected')">Reject</button>;
+      html += </td></tr>;
+    })
+    html += '</tbody></table>';
+  }
+  const modal = document.createElement('div'); modal.className='card'; modal.style.marginTop='12px'; modal.innerHTML = html;
+  const container = document.getElementById('roleContent');
+  container.appendChild(modal);
+}
+
+function editJob(jobId){
+  const job = byId(state.jobs,jobId);
+  const title = prompt('Edit title', job.title); if(title===null) return;
+  job.title = title; saveState(state); renderEmployerJobs(); renderJobList(); alert('Saved');
+}
+
+// called from inline buttons
+window.changeAppStatus = function(appId,newStatus){
+  const app = byId(state.applications,appId);
+  if(!app) return alert('Application not found');
+  app.status = newStatus; saveState(state); renderEmployerJobs(); renderJobList(); renderRole(document.querySelector('button.active').dataset.role); refreshRightCol();
+}
+
+// ---------- Placement Officer View ----------
+function renderOfficer(container){
+  container.innerHTML = `
+    <h2>Placement Officer</h2>
+    <div class="small">Track placement records and generate simple reports.</div>
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0" />
+    <div style="display:flex;gap:12px">
+      <div style="flex:1" id="officerMain"></div>
+      <div style="width:320px">
+        <h3>Reports</h3>
+        <div id="reports"></div>
+      </div>
+    </div>
+  `;
+  renderOfficerMain(); renderReports();
+}
+
+function renderOfficerMain(){
+  const el = document.getElementById('officerMain');
+  let html = '<h3>All Applications</h3>';
+  const apps = state.applications.slice().sort((a,b)=>b.appliedAt-a.appliedAt);
+  if(apps.length===0) html += '<div class="small">No applications yet.</div>';
+  else{
+    html += '<table class="table"><thead><tr><th>Student</th><th>Job</th><th>Company</th><th>Applied</th><th>Status</th></tr></thead><tbody>'
+    apps.forEach(a=>{ const stud = byId(state.users,a.studentId)||{}; const job = byId(state.jobs,a.jobId)||{}; html += <tr><td>${stud.name||'[deleted]'}</td><td>${job.title||'[removed]'}</td><td>${companyName(job.companyId)}</td><td>${new Date(a.appliedAt).toLocaleDateString()}</td><td><span class="status ${a.status}">${a.status}</span></td></tr> })
+    html += '</tbody></table>'
+  }
+  el.innerHTML = html;
+}
+
+function renderReports(){
+  const el = document.getElementById('reports');
+  const totalApps = state.applications.length;
+  const accepted = state.applications.filter(a=>a.status==='accepted').length;
+  const rejected = state.applications.filter(a=>a.status==='rejected').length;
+  const pending = totalApps - accepted - rejected;
+  el.innerHTML = `<div class="small">Total applications: <strong>${totalApps}</strong></div>
+    <div class="small">Accepted: ${accepted} • Rejected: ${rejected} • Pending: ${pending}</div>
+    <div style="margin-top:8px"><button class="btn" id="downloadReport">Download JSON report</button></div>`;
+  document.getElementById('downloadReport').addEventListener('click',()=>{
+    const blob = new Blob([JSON.stringify({state,stateAt:Date.now()},null,2)],{type:'application/json'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='placements-report.json'; a.click(); URL.revokeObjectURL(url);
+  })
+}
+
+// ---------- Admin View ----------
+function renderAdmin(container){
+  container.innerHTML = `
+    <h2>Admin</h2>
+    <div class="small">Manage users and placement data.</div>
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0" />
+    <div style="display:flex;gap:12px">
+      <div style="flex:1">
+        <h3>Users</h3>
+        <div id="adminUsers"></div>
+        <h3 style="margin-top:12px">Add User</h3>
+        <label>Name<input id="newUserName" /></label>
+        <label>Role<select id="newUserRole"><option value="student">Student</option><option value="employer">Employer</option><option value="placement-officer">Placement Officer</option><option value="admin">Admin</option></select></label>
+        <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="addUserBtn">Add</button></div>
+      </div>
+      <div style="width:320px">
+        <h3>System</h3>
+        <div class="small">Total users: <span id="adminTotalUsers"></span></div>
+        <div style="margin-top:8px"><button class="btn" id="clearAll">Clear All Data</button></div>
+      </div>
+    </div>
+  `;
+  renderAdminUsers();
+  document.getElementById('addUserBtn').addEventListener('click',()=>{
+    const name=document.getElementById('newUserName').value.trim(); if(!name) return alert('Provide name');
+    const role=document.getElementById('newUserRole').value;
+    state.users.push({id:uid('u'),name,role}); saveState(state); renderAdminUsers(); refreshRightCol();
+  })
+  document.getElementById('clearAll').addEventListener('click',()=>{
+    if(!confirm('This will reset the demo state. Continue?')) return;
+    localStorage.removeItem(LS_KEY); state = loadState(); renderRole(document.querySelector('button.active').dataset.role); refreshRightCol();
+  })
+}
+
+function renderAdminUsers(){
+  const el = document.getElementById('adminUsers');
+  el.innerHTML='';
+  state.users.forEach(u=>{
+    const div=document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.alignItems='center'; div.style.padding='6px 0';
+    div.innerHTML = <div><strong>${u.name}</strong><div class="small">${u.role}</div></div>;
+    const actions = document.createElement('div');
+    const switchBtn = document.createElement('button'); switchBtn.className='btn'; switchBtn.textContent='Switch'; switchBtn.addEventListener('click',()=>{state.currentUserId=u.id; saveState(state); refreshRightCol(); renderRole(document.querySelector('button.active').dataset.role);});
+    const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete'; delBtn.addEventListener('click',()=>{if(confirm('Delete user?')){state.users=state.users.filter(x=>x.id!==u.id);state.applications=state.applications.filter(a=>a.studentId!==u.id);saveState(state);renderAdminUsers();refreshRightCol();}});
+    actions.appendChild(switchBtn); actions.appendChild(delBtn);
+    div.appendChild(actions);
+    el.appendChild(div);
+  })
+  document.getElementById('adminTotalUsers').textContent = state.users.length;
+}
+
+// ---------- Utilities ----------
+function companyName(companyId){const c = byId(state.users,companyId); return c?c.name:'[company removed]'}
+function timeAgo(ts){const s = Math.floor((Date.now()-ts)/1000); if(s<60) return ${s}s ago; if(s<3600) return ${Math.floor(s/60)}m ago; if(s<86400) return ${Math.floor(s/3600)}h ago; return ${Math.floor(s/86400)}d ago}
+function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function refreshRightCol(){
+  const me=currentUser();
+  document.getElementById('currentUserAvatar').textContent = me.name.split(' ').map(s=>s[0]).slice(0,2).join('');
+  document.getElementById('currentUserName').textContent = me.name;
+  document.getElementById('currentUserRole').textContent = me.role.replace('-',' ');
+  document.getElementById('statJobs').textContent = 'Jobs: '+state.jobs.length;
+  document.getElementById('statApplications').textContent = 'Applications: '+state.applications.length;
+  document.getElementById('statPlaced').textContent = 'Placed: '+state.applications.filter(a=>a.status==='accepted').length;
+}
+
+// ---------- Sample data / import-export ----------
+document.getElementById('createSampleData').addEventListener('click',()=>{
+  if(!confirm('Populate sample data? This will append sample content to current demo.')) return;
+  state.users.push({id:uid('u'),name:'Bob Student',role:'student'});
+  const cid = uid('u'); state.users.push({id:cid,name:'TechLabs',role:'employer'});
+  const j1 = {id:uid('job'),title:'Backend Intern',companyId:cid,location:'Onsite',skills:['Node','Databases'],description:'6-month backend internship',positions:1,postedAt:Date.now()-1000*60*60*24*3};
+  state.jobs.push(j1);
+  state.applications.push({id:uid('app'),jobId:j1.id,studentId:state.users.find(u=>u.role==='student').id,status:'pending',appliedAt:Date.now()-1000*60*60*10,cover:'Interested.'});
+  saveState(state); renderRole(document.querySelector('button.active').dataset.role); refreshRightCol(); alert('Sample data added');
+});
+
+// export
+document.getElementById('exportData').addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='fedf-ps14-data.json'; a.click(); URL.revokeObjectURL(url);
+});
+// import
+document.getElementById('importDataBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',async(e)=>{
+  const f = e.target.files[0]; if(!f) return; const txt = await f.text(); try{ const json = JSON.parse(txt); state = json; saveState(state); renderRole(document.querySelector('button.active').dataset.role); refreshRightCol(); alert('Imported'); }catch(err){alert('Invalid JSON')}
+});
+
+// reset demo
+document.getElementById('resetDemo').addEventListener('click',()=>{ if(confirm('Reset demo to default state?')){localStorage.removeItem(LS_KEY); state=loadState(); renderRole('student'); refreshRightCol();}})
+
+// small helpers
+renderRole('student'); refreshRightCol();
+
+// keep UI reactive for acceptance changes
+setInterval(()=>{ /* noop: could poll backend */ },5000);
+
+</script>
+</body>
+</html>
